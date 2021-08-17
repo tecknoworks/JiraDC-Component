@@ -12,7 +12,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(bodyParser.raw());
 
-const Component = require('./models/component')
+const Component = require('./models/component');
+const component = require('./models/component');
 const port = 8087
 
 var mongoDB = 'mongodb+srv://cata:cata@cluster0.wcbqw.mongodb.net/first?retryWrites=true&w=majority';
@@ -63,11 +64,16 @@ app.get('/component', async (req, res) =>{
         if (!users[index]) {
             users[index] = { username: "no user" };
         }
+        if (!projects[index]) {
+            projects[index] = { projectName: "no project" };
+        }
         const componentDTO = {
             _id: record[index]._id,
             name: record[index].name,
             description: record[index].description,
+            user_id: users[index]._id,
             username: users[index].username,
+            project_id: projects[index]._id,
             projectName: projects[index].name,
             issuesNo: 0
             // _id: record[index]._id,
@@ -76,6 +82,20 @@ app.get('/component', async (req, res) =>{
     } 
     res.json(result)
 })
+
+//edit component
+
+app.put('/component', async (req, res) => {
+    const newObject = req.body
+    console.log(newObject)
+    var id_=req.params.id
+    const filter={_id:req.body._id}
+    let update_= await Component.findOneAndUpdate(filter, newObject, {
+        new: true,
+        upsert: true 
+      });
+    res.send(update_)
+ })
 
 app.listen(port, () => {
     console.log(`Example app listening at http://localhost:${port}`)

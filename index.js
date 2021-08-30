@@ -6,6 +6,7 @@ const fetch = require('node-fetch');
 const baseUrl = 'http://localhost';
 const authServiceUrl = baseUrl + ':8082';
 const projServiceUrl = baseUrl + ':8083';
+const workitemServiceUrl = baseUrl + ':8084';
 const app = express()
 app.use(cors())
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -34,9 +35,10 @@ app.get('/component', async (req, res) =>{
     let record = await Component.find({})
     const userIds = record.map(c => c.user_id);
     const projectIds = record.map(c => c.project_id);
-
+    const componentIds = record.map(c => c._id);
     let users = [];
     let projects = [];
+    let workitems = [];
     await fetch(authServiceUrl + '/allusers', 
     { 
         method: 'POST',
@@ -60,6 +62,17 @@ app.get('/component', async (req, res) =>{
     .then(res => res.json())
     .then(data => projects = data);
 
+    //issues
+    await fetch(workitemServiceUrl + '/workitemIssue', 
+    { 
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(componentIds)
+    })
+    .then(res => res.json())
+    .then(data => workitems = data);
     for (let index = 0; index < record.length; index++) {
         if (!users[index]) {
             users[index] = { username: "no user" };
@@ -75,7 +88,7 @@ app.get('/component', async (req, res) =>{
             username: users[index].username,
             project_id: projects[index]._id,
             projectName: projects[index].name,
-            issuesNo: 0
+            issuesNo: workitems[index]
             // _id: record[index]._id,
         }
         result.push(componentDTO);   

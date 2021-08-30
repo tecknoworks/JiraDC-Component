@@ -95,6 +95,72 @@ app.get('/component', async (req, res) =>{
     } 
     res.json(result)
 })
+app.post('/componentProject', async (req, res) =>{
+    let result = [];
+    let record = await Component.find({'project_id':req.body.id})
+    const userIds = record.map(c => c.user_id);
+    const projectIds = record.map(c => c.project_id);
+    const componentIds = record.map(c => c._id);
+    let users = [];
+    let projects = [];
+    let workitems = [];
+    await fetch(authServiceUrl + '/allusers', 
+    { 
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userIds)
+    })
+    .then(res => res.json())
+    .then(data => users = data);
+
+    //projects
+    await fetch(projServiceUrl + '/allprojects', 
+    { 
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(projectIds)
+    })
+    .then(res => res.json())
+    .then(data => projects = data);
+
+    //issues
+    await fetch(workitemServiceUrl + '/workitemIssue', 
+    { 
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(componentIds)
+    })
+    .then(res => res.json())
+    .then(data => workitems = data);
+    for (let index = 0; index < record.length; index++) {
+        if (!users[index]) {
+            users[index] = { username: "no user" };
+        }
+        if (!projects[index]) {
+            projects[index] = { projectName: "no project" };
+        }
+        const componentDTO = {
+            _id: record[index]._id,
+            name: record[index].name,
+            description: record[index].description,
+            user_id: users[index]._id,
+            username: users[index].username,
+            project_id: projects[index]._id,
+            projectName: projects[index].name,
+            issuesNo: workitems[index]
+            // _id: record[index]._id,
+        }
+        result.push(componentDTO);   
+    } 
+    console.log(result)
+    res.json(result)
+})
 
 //edit component
 
